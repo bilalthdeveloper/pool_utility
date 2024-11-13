@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	Fatal_Error_Code = 1
-	Debug_Error_Code = 2
-	Log_Info         = 3
+	fatal_Error_Code = 1
+	debug_Error_Code = 2
+	log_Info         = 3
 )
 
 type Task func() (interface{}, error)
@@ -60,16 +60,16 @@ func WithTaskQueueSize(size int) Option {
 	}
 }
 
-func Min(a, b int) int {
+func min(a, b int) int {
 	if a < b {
 		return a
 	}
 	return b
 }
 
-func LogMessage(message string, code int) {
+func logMessage(message string, code int) {
 	switch code {
-	case Fatal_Error_Code:
+	case fatal_Error_Code:
 		_, file, line, ok := runtime.Caller(1)
 		if ok {
 			fmt.Printf("\nFATAL ERROR: %s\nFile: %s, Line: %d\n", message, file, line)
@@ -78,9 +78,9 @@ func LogMessage(message string, code int) {
 		}
 		fmt.Println("The application will exit now.")
 		os.Exit(1)
-	case Debug_Error_Code:
+	case debug_Error_Code:
 		fmt.Printf("\nDEBUG: %s\n", message)
-	case Log_Info:
+	case log_Info:
 		fmt.Printf("\nINFO: %s\n", message)
 	default:
 		fmt.Println("Unknown error code.")
