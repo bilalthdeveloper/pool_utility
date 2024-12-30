@@ -9,7 +9,7 @@ type Worker struct {
 	taskQueue chan Task
 }
 
-func newWorker() *Worker {
+func NewWorker() *Worker {
 	return &Worker{
 		taskQueue: make(chan Task, 1),
 	}

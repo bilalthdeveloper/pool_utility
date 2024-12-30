@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"sync"
 	"time"
 )
 
@@ -14,25 +13,17 @@ const (
 	log_Info         = 3
 )
 
-type Task func() (interface{}, error)
 type Option func(*Pool)
-
-func WithLock(lock sync.Locker) Option {
-	return func(p *Pool) {
-		p.lock = lock
-		p.cond = sync.NewCond(p.lock)
-	}
-}
-
-func WithMinWorkers(minWorkers int) Option {
-	return func(p *Pool) {
-		p.minWorkers = minWorkers
-	}
-}
 
 func WithTimeout(timeout time.Duration) Option {
 	return func(p *Pool) {
 		p.timeout = timeout
+	}
+}
+
+func WithAdjustInterval(interval time.Duration) Option {
+	return func(p *Pool) {
+		p.adjustInterval = interval
 	}
 }
 
