@@ -25,6 +25,7 @@ type pool interface {
 type Pool struct {
 	workers        []*Worker
 	maxWorkers     int
+	WorkerStack    *WorkerStack
 	taskQueue      chan Task
 	taskQueueSize  int
 	retryCount     int
@@ -48,12 +49,12 @@ func NewPool(maxWorkers int, opts ...Option) *Pool {
 	for _, opt := range opts {
 		opt(pool)
 	}
-
 	pool.taskQueue = make(chan Task, pool.taskQueueSize)
 	pool.lock = new(sync.Mutex)
 	pool.cond = sync.NewCond(pool.lock)
-	go pool.adjust()
 	go pool.dispatch()
+	go pool.adjust()
+
 	return pool
 }
 
@@ -67,32 +68,17 @@ func (p *Pool) adjust() {
 			case <-p.ctx.Done():
 				return
 			case <-ticker.C:
-				queueSize := len(p.taskQueue)
-				activeWorkers := len(p.workers)
-				idleWorkers := p.maxWorkers - activeWorkers
-
-				if queueSize > p.taskQueueSize/2 && activeWorkers < p.maxWorkers {
-					newWorkers := activeWorkers + 1
-					if newWorkers > p.maxWorkers {
-						newWorkers = p.maxWorkers
+				var activeWorkers int
+				for _, worker := range p.workers {
+					if p.WorkerStack.workers[worker] {
+						activeWorkers++
 					}
-					go func() {
-						for i := 0; i < newWorkers-activeWorkers; i++ {
-							worker := NewWorker()
-							p.workers = append(p.workers, worker)
-						}
-					}()
 				}
-				if queueSize == 0 && idleWorkers > 0 {
-					go func() {
-						for i := 0; i < idleWorkers; i++ {
-							if len(p.workers) > 0 {
-								worker := p.workers[len(p.workers)-1]
-								worker.Stop()
-								p.workers = p.workers[:len(p.workers)-1]
-							}
-						}
-					}()
+				if activeworker < p.maxWorkers {
+					p.scaleDown()
+				}
+				if activeworker < len(p.taskQueue) {
+					p.scaleUp()
 				}
 			}
 		}
@@ -100,6 +86,13 @@ func (p *Pool) adjust() {
 
 }
 
+func (p *Pool) scaleDown() {
+
+}
+
+func (p *Pool) scaleUp() {
+
+}
 func (p *Pool) dispatch() {
 
 }

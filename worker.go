@@ -3,7 +3,12 @@ package pool
 import (
 	"context"
 	"fmt"
+	"time"
 )
+
+type WorkerStack struct {
+	workers map[*Worker]bool
+}
 
 type Worker struct {
 	taskQueue chan Task
@@ -15,14 +20,21 @@ func NewWorker() *Worker {
 	}
 }
 
-func (w *Worker) start(pool *Pool, workerIndex int) {
+func (w *Worker) start(pool *Pool, worker *Worker) {
+	var ticker *time.Ticker
 	go func() {
-		for t := range w.taskQueue {
-			if t != nil {
-				result, err := w.ExecuteTask(t, pool)
-				w.HandleResult(result, err, pool)
+		for {
+			select {
+			case <-pool.ctx.Done():
+				return
+			case task := <-pool.taskQueue:
+				res, err := w.ExecuteTask(task, pool)
+				w.HandleResult(res, err, pool)
+			case <-ticker.C:
+				pool.WorkerStack.workers[worker] = false
+			default:
+				ticker = time.NewTicker(pool.adjustInterval)
 			}
-			pool.Push(workerIndex)
 		}
 	}()
 }
