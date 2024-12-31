@@ -74,20 +74,23 @@ func (p *Pool) adjust() {
 						activeWorkers++
 					}
 				}
-				if activeworker < p.maxWorkers {
-					p.scaleDown()
-				}
-				if activeworker < len(p.taskQueue) {
+				if activeWorkers < p.maxWorkers {
+					go p.scaleDown()
+				} else if activeWorkers < len(p.taskQueue) {
 					p.scaleUp()
 				}
 			}
 		}
 	}()
-
 }
 
 func (p *Pool) scaleDown() {
-
+	for i := len(p.workers) - 1; i >= 0; i-- {
+		worker := p.workers[i]
+		if p.WorkerStack.workers[worker] == false {
+			p.workers = append(p.workers[:i], p.workers[i+1:]...)
+		}
+	}
 }
 
 func (p *Pool) scaleUp() {

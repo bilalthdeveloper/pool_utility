@@ -21,7 +21,8 @@ func NewWorker() *Worker {
 }
 
 func (w *Worker) start(pool *Pool, worker *Worker) {
-	var ticker *time.Ticker
+	ticker := time.NewTicker(pool.adjustInterval)
+	defer ticker.Stop()
 	go func() {
 		for {
 			select {
@@ -30,10 +31,9 @@ func (w *Worker) start(pool *Pool, worker *Worker) {
 			case task := <-pool.taskQueue:
 				res, err := w.ExecuteTask(task, pool)
 				w.HandleResult(res, err, pool)
+				ticker.Reset(pool.adjustInterval)
 			case <-ticker.C:
 				pool.WorkerStack.workers[worker] = false
-			default:
-				ticker = time.NewTicker(pool.adjustInterval)
 			}
 		}
 	}()
